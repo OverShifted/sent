@@ -4,19 +4,19 @@
 
 #include "sparse_set.h"
 
-using ComponentIDType = uint32_t;
-using EntityIDType = uint32_t;
+using ComponentTypeID = uint32_t;
+using Entity = uint32_t;
 
-ComponentIDType next_component_id()
+ComponentTypeID next_component_id()
 {
-	static ComponentIDType id = 0;
+	static ComponentTypeID id = 0;
 	return id++;
 }
 
 template<typename C>
-ComponentIDType component_type_id()
+ComponentTypeID component_type_id()
 {
-	static ComponentIDType id = next_component_id();
+	static ComponentTypeID id = next_component_id();
 	return id;
 }
 
@@ -28,18 +28,16 @@ public:
 	{
 	}
 
-	EntityIDType new_entity()
+	Entity new_entity()
 	{
 		return m_entity_count++;
 	}
 
 	template<typename C>
-	C* add_component(const EntityIDType& entity)
+	C* add_component(const Entity& entity)
 	{
 		if (component_type_id<C>() >= m_data.size())
-		{
 			m_data.push_back(std::make_shared<ComponentData<C>>(m_max_entity_count));
-		}
 
 		auto data = (ComponentData<C>*)m_data[component_type_id<C>()].get();
 		data->set.add(entity);
@@ -48,7 +46,7 @@ public:
 	}
 
 	template<typename C>
-	C* get_component(const EntityIDType& entity)
+	C* get_component(const Entity& entity)
 	{
 		if (component_type_id<C>() >= m_data.size())
 			return nullptr;
@@ -59,18 +57,18 @@ public:
 	}
 
 	template<typename C>
-	bool has_component(const EntityIDType& entity)
+	bool has_component(const Entity& entity)
 	{
 		return component_type_id<C>() < m_data.size() && m_data[component_type_id<C>()]->set.has(entity);
 	}
 
-	bool has_component(const EntityIDType& entity, const ComponentIDType& component)
+	bool has_component(const Entity& entity, const ComponentTypeID& component)
 	{
 		return component < m_data.size() && m_data[component]->set.has(entity);
 	}
 
 	template<typename C>
-	void remove_component(const EntityIDType& entity)
+	void remove_component(const Entity& entity)
 	{
 		if (component_type_id<C>() >= m_data.size())
 			return;
@@ -82,24 +80,22 @@ public:
 	}
 
 	template<typename F>
-	void query(F fn, ComponentIDType* begin, ComponentIDType* end)
+	void query(F fn, ComponentTypeID* begin, ComponentTypeID* end)
 	{
 		uint32_t min_size = UINT32_MAX;
-		SparseSet<EntityIDType, uint32_t>* min_set;
+		SparseSet<Entity, uint32_t>* min_set;
 
-		for (ComponentIDType* type_id = begin; type_id < end; type_id++)
+		for (ComponentTypeID* type_id = begin; type_id < end; type_id++)
 		{
 			if (m_data.size() <= *type_id)
 			{
-				std::cout << "Returned! " << m_data.size() << " >= " << *type_id << "\n";
+				std::cout << "Error: Invalid component typeid: " << *type_id << "\n";
 				return;
 			}
 
 			auto data = m_data[*type_id].get();
 			if (data->set.m_size < min_size)
-			{
 				min_set = &data->set;
-			}
 		}
 
 		// Loop over entities with that specific component
@@ -109,7 +105,7 @@ public:
 
 			// Make sure it has other components as well
 			bool has_all = true;
-			for (ComponentIDType* type_id = begin; type_id < end; type_id++)
+			for (ComponentTypeID* type_id = begin; type_id < end; type_id++)
 			{
 				if (!has_component(entity, *type_id))
 				{
@@ -130,7 +126,7 @@ private:
 		{
 		}
 
-		SparseSet<EntityIDType, uint32_t> set;
+		SparseSet<Entity, uint32_t> set;
 	};
 
 	template<typename C>
@@ -147,6 +143,6 @@ private:
 
 	std::vector<std::shared_ptr<IComponentData>> m_data;
 
-	EntityIDType m_entity_count = 0;
+	Entity m_entity_count = 0;
 	uint32_t m_max_entity_count;
 };
