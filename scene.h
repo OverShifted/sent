@@ -119,9 +119,9 @@ public:
 		}
 	}
 private:
-	struct IComponentData
+	struct ComponentDataBase
 	{
-		IComponentData(uint32_t max_entity_count)
+		ComponentDataBase(uint32_t max_entity_count)
 			: set(max_entity_count)
 		{
 		}
@@ -130,10 +130,10 @@ private:
 	};
 
 	template<typename C>
-	struct ComponentData : public IComponentData
+	struct ComponentData : public ComponentDataBase
 	{
 		ComponentData(uint32_t max_entity_count)
-			: IComponentData(max_entity_count)
+			: ComponentDataBase(max_entity_count)
 		{
 			components.resize(max_entity_count);
 		}
@@ -141,7 +141,7 @@ private:
 		std::vector<C> components;
 	};
 
-	std::vector<std::shared_ptr<IComponentData>> m_data;
+	std::vector<std::shared_ptr<ComponentDataBase>> m_data;
 
 	Entity m_entity_count = 0;
 	uint32_t m_max_entity_count;
